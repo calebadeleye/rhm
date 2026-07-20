@@ -1,0 +1,53 @@
+# Example Apache virtual host for Redemption Hour Radio.
+# Requires: mod_rewrite, mod_proxy, mod_proxy_http, mod_ssl, mod_headers
+#
+# Copy to /etc/apache2/sites-available/redemptionradio.conf, then:
+#   a2enmod rewrite proxy proxy_http ssl headers
+#   a2ensite redemptionradio
+#   apachectl configtest && systemctl reload apache2
+
+<VirtualHost *:80>
+    ServerName redemptionradio.example.com
+    Redirect permanent / https://redemptionradio.example.com/
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerName redemptionradio.example.com
+    DocumentRoot /var/www/redemptionradio/dist
+
+    SSLEngine on
+    SSLCertificateFile      /etc/letsencrypt/live/redemptionradio.example.com/fullchain.pem
+    SSLCertificateKeyFile   /etc/letsencrypt/live/redemptionradio.example.com/privkey.pem
+
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # API — reverse proxy to the Express backend (PM2-managed, port 4000).
+    ProxyPreserveHost On
+    ProxyTimeout 15
+    ProxyPass        /api/ http://127.0.0.1:4000/api/
+    ProxyPassReverse /api/ http://127.0.0.1:4000/api/
+
+    <Directory /var/www/redemptionradio/dist>
+        Options -Indexes +FollowSymLinks
+        AllowOverride None
+        Require all granted
+
+        # SPA fallback: client-side routing (React Router) handles unmatched paths.
+        RewriteEngine On
+        RewriteBase /
+        RewriteCond %{REQUEST_FILENAME} !-f
+        RewriteCond %{REQUEST_FILENAME} !-d
+        RewriteCond %{REQUEST_URI} !^/api/
+        RewriteRule ^ index.html [L]
+    </Directory>
+
+    # Long-cache hashed static assets.
+    <LocationMatch "^/assets/">
+        Header set Cache-Control "public, immutable, max-age=31536000"
+    </LocationMatch>
+
+    ErrorLog  ${APACHE_LOG_DIR}/redemptionradio-error.log
+    CustomLog ${APACHE_LOG_DIR}/redemptionradio-access.log combined
+</VirtualHost>
