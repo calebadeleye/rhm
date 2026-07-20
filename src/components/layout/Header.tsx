@@ -39,7 +39,7 @@ export function Header() {
       >
         <div className={`container-page flex items-center justify-between transition-all ${scrolled ? "py-2.5" : "py-4"}`}>
           <NavLink to="/" className="flex items-center gap-2" aria-label="Redemption Hour Ministries home">
-            <Logo className={`w-auto transition-all ${scrolled ? "h-9" : "h-11"}`} />
+            <Logo className={`w-auto transition-all ${scrolled ? "h-12" : "h-14"}`} />
           </NavLink>
 
           <nav className="hidden items-center gap-6 lg:flex" aria-label="Primary">

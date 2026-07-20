@@ -41,7 +41,7 @@ export function NavDrawer({ open, onClose, items }: NavDrawerProps) {
       />
       <div className="absolute inset-y-0 right-0 flex w-full max-w-xs flex-col bg-white p-6 shadow-xl">
         <div className="mb-8 flex items-center justify-between">
-          <Logo className="h-9 w-auto" />
+          <Logo className="h-12 w-auto" />
           <button
             ref={closeButtonRef}
             type="button"

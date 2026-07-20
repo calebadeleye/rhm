@@ -27,7 +27,7 @@ export function Footer() {
     <footer className="border-t border-ink/10 bg-surface-warm pb-24">
       <div className="container-page grid gap-10 py-14 md:grid-cols-2 lg:grid-cols-4">
         <div>
-          <Logo className="h-11 w-auto" />
+          <Logo className="h-14 w-auto" />
           <p className="mt-4 max-w-xs text-sm text-ink-soft">
             Redemption Radio is a ministry of Redemption Hour Ministries, sharing the Gospel and
             equipping believers through teaching, worship, and prayer.
