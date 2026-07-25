@@ -1,5 +1,4 @@
-import { Music, Radio, Mic, HandHeart, BookOpen, MessageCircle, Moon } from "lucide-react";
-import type { ProgrammeCategory, MessageCategory } from "@/types/content";
+import { Music, Radio, Mic, HandHeart, BookOpen, MessageCircle, Moon, Sparkles } from "lucide-react";
 
 const CATEGORY_ICON: Record<string, typeof Music> = {
   teaching: BookOpen,
@@ -10,6 +9,7 @@ const CATEGORY_ICON: Record<string, typeof Music> = {
   overnight: Moon,
   sermon: BookOpen,
   "worship-devotional": Music,
+  special: Sparkles,
 };
 
 const CATEGORY_GRADIENT: Record<string, string> = {
@@ -21,12 +21,15 @@ const CATEGORY_GRADIENT: Record<string, string> = {
   overnight: "from-ink to-brand-800",
   sermon: "from-brand-700 to-brand-500",
   "worship-devotional": "from-brand-600 to-brand-400",
+  special: "from-pink-600 to-brand-500",
 };
 
 interface CoverArtProps {
   src?: string | null;
   alt: string;
-  category: ProgrammeCategory | MessageCategory;
+  /** Any category key — recognised ones get a matching icon/gradient,
+   * anything else falls back to a generic radio icon and brand gradient. */
+  category: string;
   className?: string;
 }
 

@@ -1,8 +1,6 @@
 import { BookOpen, HandHeart, Sparkles } from "lucide-react";
 import { Seo } from "@/components/seo/Seo";
 import { ministryInfo } from "@/data/ministry";
-import { presenters } from "@/data/presenters";
-import { Avatar } from "@/components/ui/Avatar";
 
 const PILLAR_ICONS = [BookOpen, HandHeart, Sparkles];
 
@@ -35,23 +33,6 @@ export default function About() {
               </div>
             );
           })}
-        </div>
-      </section>
-
-      <section className="bg-surface-muted py-16">
-        <div className="container-page">
-          <h2 className="mb-8 text-center text-2xl font-bold text-ink">Meet Our Team</h2>
-          <div className="mx-auto grid max-w-4xl gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {presenters.map((presenter) => (
-              <div key={presenter.id} className="card flex gap-4 p-5">
-                <Avatar name={presenter.name} photoUrl={presenter.photoUrl} className="h-14 w-14 shrink-0" />
-                <div>
-                  <h3 className="font-bold text-ink">{presenter.name}</h3>
-                  <p className="mt-1 text-sm text-ink-soft">{presenter.bio}</p>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
     </>

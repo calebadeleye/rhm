@@ -58,6 +58,7 @@ export function Footer() {
             <li><NavLink to="/programmes" className="hover:text-brand-700">Programmes</NavLink></li>
             <li><NavLink to="/schedule" className="hover:text-brand-700">Schedule</NavLink></li>
             <li><NavLink to="/messages" className="hover:text-brand-700">Messages</NavLink></li>
+            <li><NavLink to="/app" className="hover:text-brand-700">Get the App</NavLink></li>
             <li><NavLink to="/testimonies" className="hover:text-brand-700">Testimonies</NavLink></li>
             <li><NavLink to="/contact" className="hover:text-brand-700">Contact Us</NavLink></li>
           </ul>
@@ -83,7 +84,6 @@ export function Footer() {
               <span>{ministryInfo.address}</span>
             </li>
           </ul>
-          <p className="mt-3 text-xs text-ink-faint">{ministryInfo.officeHours}</p>
           <NavLink to="/listen-live" className="btn-ghost mt-4 !px-0">
             <Radio className="h-4 w-4" aria-hidden="true" /> Listen Live
           </NavLink>

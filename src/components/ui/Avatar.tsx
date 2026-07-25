@@ -20,7 +20,7 @@ export function Avatar({ name, photoUrl, className = "h-12 w-12" }: AvatarProps)
         src={photoUrl}
         alt={name}
         loading="lazy"
-        className={`rounded-full object-cover ${className}`}
+        className={`rounded-full object-cover object-top ${className}`}
       />
     );
   }

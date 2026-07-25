@@ -2,6 +2,12 @@ import type { Presenter } from "@/types/content";
 
 export const presenters: Presenter[] = [
   {
+    id: "caleb-adeleye",
+    name: "Caleb Adeleye",
+    bio: "Host of Morning Praise, opening each broadcast day with uplifting worship and an encouraging word to start listeners' mornings on the right note.",
+    photoUrl: "/images/presenters/caleb_adeleye.png",
+  },
+  {
     id: "eric-johnson",
     name: "Pastor Eric Johnson",
     bio: "Senior pastor and founder of Redemption Hour Ministries. Eric has taught the Word for over twenty years, with a focus on grace, discipleship and everyday application of Scripture.",

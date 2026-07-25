@@ -14,6 +14,7 @@ const MessageDetail = lazy(() => import("@/pages/MessageDetail"));
 const Testimonies = lazy(() => import("@/pages/Testimonies"));
 const PrayerRequest = lazy(() => import("@/pages/PrayerRequest"));
 const Donate = lazy(() => import("@/pages/Donate"));
+const GetApp = lazy(() => import("@/pages/GetApp"));
 const Contact = lazy(() => import("@/pages/Contact"));
 const Privacy = lazy(() => import("@/pages/Privacy"));
 const Terms = lazy(() => import("@/pages/Terms"));
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="/testimonies" element={<Testimonies />} />
           <Route path="/prayer-request" element={<PrayerRequest />} />
           <Route path="/donate" element={<Donate />} />
+          <Route path="/app" element={<GetApp />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />

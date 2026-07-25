@@ -61,7 +61,7 @@ export default function ProgrammeDetail() {
             src={programme.coverImageUrl}
             alt={programme.title}
             category={programme.category}
-            className="aspect-square w-full rounded-2xl"
+            className="aspect-square w-full rounded-2xl object-top"
           />
 
           <div>

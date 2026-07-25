@@ -1,20 +1,67 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NavLink } from "react-router-dom";
-import { Heart, Menu } from "lucide-react";
+import { ChevronDown, Heart, Menu } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { NavDrawer } from "@/components/layout/NavDrawer";
 import { env } from "@/lib/env";
+import type { NavGroup } from "@/components/layout/navItems";
+import { NAV_ITEMS } from "@/components/layout/navItems";
 
-const NAV_ITEMS = [
-  { to: "/", label: "Home" },
-  { to: "/about", label: "About" },
-  { to: "/programmes", label: "Programmes" },
-  { to: "/schedule", label: "Schedule" },
-  { to: "/listen-live", label: "Listen Live" },
-  { to: "/messages", label: "Messages" },
-  { to: "/prayer-request", label: "Prayer Request" },
-  { to: "/contact", label: "Contact" },
-];
+function NavDropdown({ label, items }: NavGroup) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handlePointer = (event: PointerEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", handlePointer);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointer);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="true"
+        aria-expanded={open}
+        className="flex items-center gap-1 text-sm font-semibold uppercase tracking-wide text-ink-soft transition-colors hover:text-brand-700"
+      >
+        {label}
+        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
+      </button>
+
+      {open && (
+        <div className="absolute left-1/2 top-full z-40 mt-3 w-48 -translate-x-1/2 rounded-xl border border-ink/10 bg-white p-2 shadow-lg">
+          {items.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              onClick={() => setOpen(false)}
+              className={({ isActive }) =>
+                `block rounded-lg px-3 py-2 text-sm font-semibold normal-case tracking-normal ${
+                  isActive ? "bg-brand-50 text-brand-700" : "text-ink hover:bg-surface-muted"
+                }`
+              }
+            >
+              {item.label}
+            </NavLink>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
@@ -43,20 +90,24 @@ export function Header() {
           </NavLink>
 
           <nav className="hidden items-center gap-6 lg:flex" aria-label="Primary">
-            {NAV_ITEMS.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.to === "/"}
-                className={({ isActive }) =>
-                  `text-sm font-semibold uppercase tracking-wide transition-colors ${
-                    isActive ? "text-brand-700" : "text-ink-soft hover:text-brand-700"
-                  }`
-                }
-              >
-                {item.label}
-              </NavLink>
-            ))}
+            {NAV_ITEMS.map((entry) =>
+              "items" in entry ? (
+                <NavDropdown key={entry.label} label={entry.label} items={entry.items} />
+              ) : (
+                <NavLink
+                  key={entry.to}
+                  to={entry.to}
+                  end={entry.to === "/"}
+                  className={({ isActive }) =>
+                    `text-sm font-semibold uppercase tracking-wide transition-colors ${
+                      isActive ? "text-brand-700" : "text-ink-soft hover:text-brand-700"
+                    }`
+                  }
+                >
+                  {entry.label}
+                </NavLink>
+              ),
+            )}
           </nav>
 
           <div className="flex items-center gap-2">

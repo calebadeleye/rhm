@@ -52,6 +52,26 @@ export const programmes: Programme[] = [
     ],
   },
   {
+    id: "morning-praise",
+    slug: "morning-praise",
+    title: "Morning Praise",
+    shortDescription: "Uplifting songs and an encouraging word to start your day.",
+    description:
+      "Morning Praise sets the tone for the day with uplifting worship music and an encouraging word from Caleb Adeleye, helping listeners start their morning grounded in faith and hope.",
+    presenterId: "caleb-adeleye",
+    category: "worship",
+    coverImageUrl: "/images/presenters/caleb_adeleye.png",
+    schedule: [
+      { day: "mon", startTime: "08:00", endTime: "10:00" },
+      { day: "tue", startTime: "08:00", endTime: "10:00" },
+      { day: "wed", startTime: "08:00", endTime: "10:00" },
+      { day: "thu", startTime: "08:00", endTime: "10:00" },
+      { day: "fri", startTime: "08:00", endTime: "10:00" },
+      { day: "sat", startTime: "08:00", endTime: "10:00" },
+      { day: "sun", startTime: "08:00", endTime: "10:00" },
+    ],
+  },
+  {
     id: "worship-flow",
     slug: "worship-flow",
     title: "Worship Flow",
