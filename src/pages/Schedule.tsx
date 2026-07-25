@@ -1,38 +1,107 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { CalendarPlus } from "lucide-react";
 import { Seo } from "@/components/seo/Seo";
-import { getTodaysSchedule, getWeeklySchedule, WEEKDAY_LABELS, WEEKDAY_ORDER, formatSlotTimeRange } from "@/lib/schedule";
-import { ScheduleEntryRow } from "@/components/schedule/ScheduleEntryRow";
-import { EmptyState } from "@/components/ui/StateViews";
-import { getPresenterById } from "@/data/presenters";
+import { useStationSchedule } from "@/hooks/useStationSchedule";
+import { OnAirNowCard } from "@/components/schedule/OnAirNowCard";
+import { ScheduleCalendar, type CalendarDate } from "@/components/schedule/ScheduleCalendar";
+import { CategoryFilterList } from "@/components/schedule/CategoryFilterList";
+import { DayScheduleTable } from "@/components/schedule/DayScheduleTable";
+import { WeekListView } from "@/components/schedule/WeekListView";
+import { WeeklyGridView } from "@/components/schedule/WeeklyGridView";
+import { ErrorState, LoadingState } from "@/components/ui/StateViews";
 import { env } from "@/lib/env";
-import type { ProgrammeCategory, WeekdayCode } from "@/types/content";
-import { NavLink } from "react-router-dom";
+import { downloadIcsCalendar } from "@/lib/reminders";
+import {
+  getCurrentAndNext,
+  getOccurrencesForDate,
+  getWeekStationDates,
+  withStatus,
+} from "@/lib/liveSchedule";
+import { getStationDateInfo, weekdayIndexForDate } from "@/lib/timezone";
+import type { DaypartCategory } from "@/types/schedule";
 
-const CATEGORIES: { id: ProgrammeCategory | "all"; label: string }[] = [
-  { id: "all", label: "All Categories" },
-  { id: "teaching", label: "Teaching" },
-  { id: "worship", label: "Worship" },
-  { id: "talk", label: "Talk" },
-  { id: "prayer", label: "Prayer" },
-  { id: "testimony", label: "Testimony" },
-  { id: "overnight", label: "Overnight" },
-];
+type Tab = "today" | "week" | "grid";
+
+function sameDate(a: CalendarDate, b: { year: number; month: number; day: number }): boolean {
+  return a.year === b.year && a.month === b.month && a.day === b.day;
+}
 
 export default function Schedule() {
-  const [view, setView] = useState<"today" | "weekly">("today");
-  const [dayFilter, setDayFilter] = useState<WeekdayCode>(WEEKDAY_ORDER[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1]);
-  const [categoryFilter, setCategoryFilter] = useState<ProgrammeCategory | "all">("all");
+  const { data: dayparts, isLoading, isError, refetch } = useStationSchedule();
+  const timeZone = env.stationTimezone;
 
-  const todaysEntries = useMemo(() => getTodaysSchedule(), []);
-  const weekly = useMemo(() => getWeeklySchedule(), []);
+  const [tab, setTab] = useState<Tab>("today");
+  const [category, setCategory] = useState<DaypartCategory | "all">("all");
 
-  const filteredToday = todaysEntries.filter(
-    (entry) => categoryFilter === "all" || entry.programme.category === categoryFilter
+  // Re-render every minute so ON AIR / UPCOMING / ENDED statuses stay
+  // accurate without a full page reload.
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(new Date()), 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const todayInfo = useMemo(() => getStationDateInfo(now, timeZone), [now, timeZone]);
+
+  const [selected, setSelected] = useState<CalendarDate>(() => {
+    const info = getStationDateInfo(new Date(), timeZone);
+    return { year: info.year, month: info.month, day: info.day };
+  });
+  const [viewYear, setViewYear] = useState(selected.year);
+  const [viewMonth, setViewMonth] = useState(selected.month);
+
+  const handleChangeMonth = (delta: number) => {
+    const next = new Date(viewYear, viewMonth - 1 + delta, 1);
+    setViewYear(next.getFullYear());
+    setViewMonth(next.getMonth() + 1);
+  };
+
+  const handleSelectDate = (date: CalendarDate) => {
+    setSelected(date);
+    setViewYear(date.year);
+    setViewMonth(date.month);
+  };
+
+  const selectedInfo = useMemo(
+    () => ({ ...selected, weekdayIndex: weekdayIndexForDate(selected.year, selected.month, selected.day) }),
+    [selected]
+  );
+  const isViewingToday = sameDate(selected, todayInfo);
+
+  const list = useMemo(() => dayparts ?? [], [dayparts]);
+
+  const { current, next } = useMemo(() => getCurrentAndNext(list, now, timeZone), [list, now, timeZone]);
+
+  const matchesCategory = (daypartCategory: DaypartCategory) => category === "all" || daypartCategory === category;
+
+  const todaysOccurrences = useMemo(() => {
+    const raw = getOccurrencesForDate(list, selectedInfo, timeZone).filter((o) => matchesCategory(o.daypart.category));
+    return withStatus(raw, now);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [list, selectedInfo, timeZone, now, category]);
+
+  const week = useMemo(() => getWeekStationDates(selectedInfo), [selectedInfo]);
+  const todayIndexInWeek = week.findIndex((d) => d.year === todayInfo.year && d.month === todayInfo.month && d.day === todayInfo.day);
+
+  const weekOccurrencesRaw = useMemo(
+    () => week.map((day) => getOccurrencesForDate(list, day, timeZone).filter((o) => matchesCategory(o.daypart.category))),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [list, week, timeZone, category]
+  );
+  const weekOccurrencesWithStatus = useMemo(
+    () => weekOccurrencesRaw.map((dayOccurrences) => withStatus(dayOccurrences, now)),
+    [weekOccurrencesRaw, now]
   );
 
-  const filteredWeeklyDay = weekly[dayFilter].filter(
-    ({ programme }) => categoryFilter === "all" || programme.category === categoryFilter
-  );
+  const handleAddToCalendar = () => {
+    const events = todaysOccurrences.map((occ) => ({
+      title: `${occ.daypart.name} — Redemption Radio`,
+      description: occ.daypart.description || occ.daypart.name,
+      start: occ.start,
+      end: occ.end,
+    }));
+    downloadIcsCalendar(events, `redemption-radio-schedule-${selected.year}-${selected.month}-${selected.day}.ics`);
+  };
 
   return (
     <>
@@ -43,95 +112,97 @@ export default function Schedule() {
       />
 
       <section className="container-page py-16">
-        <div className="mb-8 text-center">
-          <p className="eyebrow mb-2">Broadcast Schedule</p>
-          <h1 className="text-3xl font-bold text-ink">What's Playing</h1>
-          <p className="mt-2 text-sm text-ink-faint">
-            Times shown in your local timezone. Redemption Radio broadcasts from{" "}
-            {env.stationTimezone.replace("_", " ")}.
-          </p>
-        </div>
-
-        <div className="mb-6 flex flex-wrap items-center justify-center gap-3">
-          <div className="inline-flex rounded-full border border-ink/15 p-1">
-            <button
-              type="button"
-              onClick={() => setView("today")}
-              className={`rounded-full px-4 py-1.5 text-sm font-semibold ${view === "today" ? "bg-brand-600 text-white" : "text-ink-soft"}`}
-            >
-              Today
-            </button>
-            <button
-              type="button"
-              onClick={() => setView("weekly")}
-              className={`rounded-full px-4 py-1.5 text-sm font-semibold ${view === "weekly" ? "bg-brand-600 text-white" : "text-ink-soft"}`}
-            >
-              Weekly
-            </button>
+        <div className="grid gap-8 lg:grid-cols-[1.3fr_1fr] lg:items-start">
+          <div>
+            <p className="eyebrow mb-2">Our Broadcast</p>
+            <h1 className="text-3xl font-bold text-ink sm:text-4xl">Programme Schedule</h1>
+            <p className="mt-3 max-w-xl text-ink-soft">
+              From morning devotion to overnight worship, we're here 24/7 with uplifting music,
+              the Word, prayer and real hope.
+            </p>
           </div>
 
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value as ProgrammeCategory | "all")}
-            className="input w-auto"
-            aria-label="Filter by category"
-          >
-            {CATEGORIES.map((c) => (
-              <option key={c.id} value={c.id}>{c.label}</option>
-            ))}
-          </select>
+          <OnAirNowCard current={current} next={next} />
         </div>
 
-        {view === "weekly" && (
-          <div className="mb-6 flex flex-wrap justify-center gap-2" role="group" aria-label="Filter by day">
-            {WEEKDAY_ORDER.map((day) => (
-              <button
-                key={day}
-                type="button"
-                onClick={() => setDayFilter(day)}
-                aria-pressed={dayFilter === day}
-                className={`rounded-full px-3.5 py-1.5 text-sm font-semibold ${
-                  dayFilter === day ? "bg-brand-600 text-white" : "border border-ink/15 text-ink-soft hover:bg-surface-muted"
-                }`}
-              >
-                {WEEKDAY_LABELS[day].slice(0, 3)}
-              </button>
-            ))}
+        {isLoading ? (
+          <div className="mt-10">
+            <LoadingState label="Loading the broadcast schedule…" />
+          </div>
+        ) : isError ? (
+          <div className="mt-10">
+            <ErrorState message="We couldn't load the schedule right now." onRetry={() => refetch()} />
+          </div>
+        ) : (
+          <div className="mt-10 grid gap-6 lg:grid-cols-[280px_1fr] lg:items-start">
+            <div className="space-y-6">
+              <div className="card p-5">
+                <ScheduleCalendar
+                  selected={selected}
+                  viewYear={viewYear}
+                  viewMonth={viewMonth}
+                  onSelect={handleSelectDate}
+                  onChangeMonth={handleChangeMonth}
+                />
+              </div>
+
+              <div className="card p-5">
+                <CategoryFilterList value={category} onChange={setCategory} />
+              </div>
+
+              <div className="card bg-surface-muted p-4 text-xs text-ink-soft">
+                All times shown in station time ({timeZone}).
+              </div>
+            </div>
+
+            <div className="card p-5 sm:p-6">
+              <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+                <div className="inline-flex rounded-full border border-ink/15 p-1">
+                  {(["today", "week", "grid"] as Tab[]).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setTab(t)}
+                      aria-pressed={tab === t}
+                      className={`rounded-full px-4 py-1.5 text-sm font-semibold capitalize ${
+                        tab === t ? "bg-brand-600 text-white" : "text-ink-soft hover:bg-surface-muted"
+                      }`}
+                    >
+                      {t === "today" ? "Today" : t === "week" ? "This Week" : "Weekly View"}
+                    </button>
+                  ))}
+                </div>
+
+                <button type="button" onClick={handleAddToCalendar} className="btn-secondary text-sm">
+                  <CalendarPlus className="h-4 w-4" aria-hidden="true" /> Add to Calendar
+                </button>
+              </div>
+
+              {tab === "today" && (
+                <DayScheduleTable
+                  occurrences={todaysOccurrences}
+                  nextId={isViewingToday ? (next?.daypart.id ?? null) : null}
+                />
+              )}
+
+              {tab === "week" && (
+                <WeekListView
+                  week={week}
+                  occurrencesByDay={weekOccurrencesWithStatus}
+                  nextId={next?.daypart.id ?? null}
+                  todayIndex={todayIndexInWeek}
+                />
+              )}
+
+              {tab === "grid" && (
+                <WeeklyGridView
+                  dayparts={list.filter((d) => matchesCategory(d.category))}
+                  occurrencesByDay={weekOccurrencesRaw}
+                />
+              )}
+            </div>
           </div>
         )}
-
-        <div className="card mx-auto max-w-3xl p-6 sm:p-8">
-          {view === "today" ? (
-            filteredToday.length === 0 ? (
-              <EmptyState title="Nothing scheduled" message="No programmes match this filter today." />
-            ) : (
-              filteredToday.map((entry) => (
-                <ScheduleEntryRow key={`${entry.programme.id}-${entry.slot.startTime}`} entry={entry} />
-              ))
-            )
-          ) : filteredWeeklyDay.length === 0 ? (
-            <EmptyState title="Nothing scheduled" message={`No programmes match this filter on ${WEEKDAY_LABELS[dayFilter]}.`} />
-          ) : (
-            <div>
-              {filteredWeeklyDay.map(({ programme, slot }, index) => {
-                const presenter = getPresenterById(programme.presenterId);
-                return (
-                  <div key={`${programme.id}-${index}`} className="flex items-center justify-between border-b border-ink/5 py-4 last:border-0">
-                    <div className="flex items-center gap-4">
-                      <div className="w-28 shrink-0 text-sm font-semibold text-ink">{formatSlotTimeRange(slot)}</div>
-                      <div>
-                        <NavLink to={`/programmes/${programme.slug}`} className="font-semibold text-ink hover:text-brand-700">
-                          {programme.title}
-                        </NavLink>
-                        <p className="text-sm text-ink-soft">{presenter?.name}</p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
       </section>
     </>
   );

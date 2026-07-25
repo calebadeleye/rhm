@@ -6,6 +6,8 @@ import { logger } from "./lib/logger.js";
 import { apiRateLimit, formRateLimit } from "./middleware/rateLimit.js";
 import { nowPlayingRouter } from "./routes/nowPlaying.js";
 import { formsRouter } from "./routes/forms.js";
+import { scheduleRouter } from "./routes/schedule.js";
+import { episodesRouter } from "./routes/episodes.js";
 
 const app = express();
 
@@ -51,6 +53,8 @@ app.get("/api/health", (_req, res) => {
 });
 
 app.use("/api/nowplaying", apiRateLimit, nowPlayingRouter);
+app.use("/api/schedule", apiRateLimit, scheduleRouter);
+app.use("/api/episodes", apiRateLimit, episodesRouter);
 app.use("/api", formRateLimit, formsRouter);
 
 // Deliberately no routes exist for AzuraCast admin actions (start/stop/

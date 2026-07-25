@@ -45,7 +45,7 @@ export function ScheduleEntryRow({ entry }: { entry: ScheduleEntry }) {
     <div className="flex flex-col gap-3 border-b border-ink/5 py-4 last:border-0 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-4">
         <div className="w-20 shrink-0 text-sm font-semibold text-ink">
-          {start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+          {start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", hour12: true })}
         </div>
         <div>
           <NavLink to={`/programmes/${programme.slug}`} className="font-semibold text-ink hover:text-brand-700">

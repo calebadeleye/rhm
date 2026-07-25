@@ -17,14 +17,9 @@ export interface IcsEventInput {
   url?: string;
 }
 
-/** Generates a minimal, RFC5545-compliant .ics file and triggers a download.
- * Used as the reminder fallback when browser notifications aren't granted. */
-export function downloadIcsReminder(event: IcsEventInput): void {
+function buildVEvent(event: IcsEventInput): string {
   const uid = `${event.start.getTime()}-${Math.random().toString(36).slice(2)}@redemptionradio`;
-  const lines = [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//Redemption Radio//Programme Reminder//EN",
+  return [
     "BEGIN:VEVENT",
     `UID:${uid}`,
     `DTSTAMP:${toIcsDate(new Date())}`,
@@ -34,18 +29,35 @@ export function downloadIcsReminder(event: IcsEventInput): void {
     `DESCRIPTION:${escapeIcsText(event.description)}`,
     event.url ? `URL:${event.url}` : undefined,
     "END:VEVENT",
-    "END:VCALENDAR",
-  ].filter(Boolean);
+  ]
+    .filter(Boolean)
+    .join("\r\n");
+}
 
+function triggerIcsDownload(body: string, filename: string): void {
+  const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Redemption Radio//Schedule//EN", body, "END:VCALENDAR"];
   const blob = new Blob([lines.join("\r\n")], { type: "text/calendar;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `${event.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.ics`;
+  link.download = filename;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+}
+
+/** Generates a minimal, RFC5545-compliant .ics file and triggers a download.
+ * Used as the reminder fallback when browser notifications aren't granted. */
+export function downloadIcsReminder(event: IcsEventInput): void {
+  const filename = `${event.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.ics`;
+  triggerIcsDownload(buildVEvent(event), filename);
+}
+
+/** Exports a whole day's (or week's) schedule as a single multi-event .ics
+ * file — used by the Schedule page's "Add to Calendar" action. */
+export function downloadIcsCalendar(events: IcsEventInput[], filename: string): void {
+  triggerIcsDownload(events.map(buildVEvent).join("\r\n"), filename);
 }
 
 function escapeIcsText(text: string): string {
