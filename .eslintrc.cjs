@@ -8,7 +8,7 @@ module.exports = {
     "plugin:react-hooks/recommended",
     "plugin:jsx-a11y/recommended",
   ],
-  ignorePatterns: ["dist", "server/dist", "node_modules", "*.cjs", "*.config.ts", "*.config.js"],
+  ignorePatterns: ["dist", "server/dist", "node_modules", "mobile", "*.cjs", "*.config.ts", "*.config.js"],
   parser: "@typescript-eslint/parser",
   parserOptions: {
     ecmaVersion: "latest",
