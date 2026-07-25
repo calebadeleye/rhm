@@ -25,5 +25,4 @@ export const ministryInfo: MinistryInfo = {
     },
   ],
   address: "PO Box 12345, Orlando, FL 32801",
-  officeHours: "Mon – Fri: 8AM – 5PM EST",
 };

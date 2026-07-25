@@ -65,5 +65,4 @@ export interface MinistryInfo {
   aboutLong: string;
   pillars: MinistryPillar[];
   address: string;
-  officeHours: string;
 }

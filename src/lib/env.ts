@@ -5,8 +5,8 @@ function read(key: string, fallback = ""): string {
 
 export const env = {
   siteUrl: read("VITE_SITE_URL", "https://redemptionradio.example.com"),
-  contactEmail: read("VITE_CONTACT_EMAIL", "info@redemptionradio.example.com"),
-  contactPhone: read("VITE_CONTACT_PHONE", "(888) 123-4567"),
+  contactEmail: read("VITE_CONTACT_EMAIL", "redemptionhourorg@gmail.com"),
+  contactPhone: read("VITE_CONTACT_PHONE", "+2348034879983"),
   donationUrl: read("VITE_DONATION_URL", ""),
   prayerRequestUrl: read("VITE_PRAYER_REQUEST_URL", ""),
   facebookUrl: read("VITE_FACEBOOK_URL", ""),

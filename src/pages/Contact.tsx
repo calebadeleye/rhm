@@ -32,8 +32,6 @@ export default function Contact() {
                 <span>{ministryInfo.address}</span>
               </li>
             </ul>
-            <p className="mt-4 text-sm text-ink-faint">{ministryInfo.officeHours}</p>
-
             {socialLinks.length > 0 && (
               <div className="mt-6">
                 <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-ink">Follow Us</h2>
