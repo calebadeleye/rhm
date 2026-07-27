@@ -12,7 +12,7 @@ import { formatSeconds } from '../lib/format';
 import { getCurrentAndNext } from '../lib/liveSchedule';
 import { getPresenterForPlaylist } from '../data/presenterPhotos';
 import { env } from '../config/env';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import type { RootStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Player'>;
@@ -25,6 +25,7 @@ export function PlayerScreen({ navigation }: Props) {
   const scheduleQuery = useStationSchedule();
   const progress = useProgress(500);
   const [isFavourite, setIsFavourite] = useState(false);
+  const { colors } = useTheme();
 
   const meta = player.currentMeta;
   const isEpisode = meta?.type === 'episode';
@@ -41,6 +42,52 @@ export function PlayerScreen({ navigation }: Props) {
   const subtitle = currentPresenter
     ? `with ${currentPresenter.name}`
     : (meta?.subtitle ?? nowPlaying?.song.artist ?? '');
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        container: { flex: 1, backgroundColor: colors.surface.default, padding: 20 },
+        topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 },
+        artWrap: { marginTop: 24, alignItems: 'center' },
+        art: { width: '100%', aspectRatio: 1, borderRadius: 24, backgroundColor: colors.surface.muted },
+        artPlaceholder: { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.brand[700] },
+        artPlaceholderText: { color: '#ffffff', fontSize: 32, fontWeight: '900' },
+        title: { marginTop: 24, fontSize: 22, fontWeight: '800', color: colors.ink.default, textAlign: 'center' },
+        subtitle: { marginTop: 4, fontSize: 14, color: colors.ink.soft, textAlign: 'center' },
+        waveform: {
+          flexDirection: 'row',
+          alignItems: 'flex-end',
+          justifyContent: 'center',
+          gap: 3,
+          height: 32,
+          marginTop: 24,
+        },
+        waveformBar: { width: 3, borderRadius: 2 },
+        timeRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
+        timeLabel: { fontSize: 12, color: colors.ink.faint },
+        controlsRow: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 32,
+          marginTop: 24,
+        },
+        disabled: { opacity: 0.3 },
+        volumeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 28 },
+        volumeTrack: { flex: 1, height: 4, borderRadius: 2, backgroundColor: colors.surface.muted },
+        volumeFill: { width: '60%', height: 4, borderRadius: 2, backgroundColor: colors.brand[600] },
+        bottomRow: { flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 28 },
+        bottomButton: {
+          width: 44,
+          height: 44,
+          borderRadius: 22,
+          backgroundColor: colors.surface.muted,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+      }),
+    [colors],
+  );
 
   const handleShare = () => {
     Share.share({
@@ -152,45 +199,3 @@ export function PlayerScreen({ navigation }: Props) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.surface.default, padding: 20 },
-  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 },
-  artWrap: { marginTop: 24, alignItems: 'center' },
-  art: { width: '100%', aspectRatio: 1, borderRadius: 24, backgroundColor: colors.surface.muted },
-  artPlaceholder: { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.brand[700] },
-  artPlaceholderText: { color: '#ffffff', fontSize: 32, fontWeight: '900' },
-  title: { marginTop: 24, fontSize: 22, fontWeight: '800', color: colors.ink.default, textAlign: 'center' },
-  subtitle: { marginTop: 4, fontSize: 14, color: colors.ink.soft, textAlign: 'center' },
-  waveform: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    gap: 3,
-    height: 32,
-    marginTop: 24,
-  },
-  waveformBar: { width: 3, borderRadius: 2 },
-  timeRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
-  timeLabel: { fontSize: 12, color: colors.ink.faint },
-  controlsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 32,
-    marginTop: 24,
-  },
-  disabled: { opacity: 0.3 },
-  volumeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 28 },
-  volumeTrack: { flex: 1, height: 4, borderRadius: 2, backgroundColor: colors.surface.muted },
-  volumeFill: { width: '60%', height: 4, borderRadius: 2, backgroundColor: colors.brand[600] },
-  bottomRow: { flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 28 },
-  bottomButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.surface.muted,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

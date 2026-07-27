@@ -14,8 +14,8 @@ import {
 import { getStationDateInfo } from '../lib/timezone';
 import { scheduleShowReminder } from '../lib/reminders';
 import { env } from '../config/env';
-import { colors } from '../theme/colors';
-import { typography } from '../theme/typography';
+import { useTheme } from '../theme/ThemeContext';
+import { useTypography } from '../theme/typography';
 import type { DaypartOccurrence } from '../types/schedule';
 
 const DAY_TABS = [
@@ -32,6 +32,44 @@ export function ScheduleScreen() {
   const scheduleQuery = useStationSchedule();
   const todayInfo = useMemo(() => getStationDateInfo(new Date(), env.stationTimezone), []);
   const [selectedWeekday, setSelectedWeekday] = useState(todayInfo.weekdayIndex);
+  const { colors } = useTheme();
+  const typography = useTypography();
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        dayTabs: {
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          marginTop: 20,
+          marginBottom: 20,
+        },
+        dayTab: {
+          paddingVertical: 8,
+          paddingHorizontal: 10,
+          borderRadius: 10,
+        },
+        dayTabSelected: { backgroundColor: colors.brand[600] },
+        dayTabLabel: { fontSize: 11, fontWeight: '700', color: colors.ink.faint },
+        dayTabLabelSelected: { color: '#ffffff' },
+        loading: { marginTop: 40 },
+        empty: { alignItems: 'center', gap: 8, marginTop: 60 },
+        list: { gap: 10 },
+        row: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 12,
+          backgroundColor: colors.surface.default,
+          borderRadius: 14,
+          padding: 14,
+        },
+        rowLive: { backgroundColor: colors.liveHighlight.bg, borderWidth: 1, borderColor: colors.liveHighlight.border },
+        time: { width: 68, fontSize: 12, fontWeight: '700', color: colors.ink.soft },
+        rowBody: { flex: 1, gap: 4 },
+        rowTitleLine: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+      }),
+    [colors],
+  );
 
   const occurrences = useMemo<DaypartOccurrence[]>(() => {
     if (!scheduleQuery.data) return [];
@@ -97,35 +135,3 @@ export function ScheduleScreen() {
     </ScreenContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  dayTabs: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  dayTab: {
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 10,
-  },
-  dayTabSelected: { backgroundColor: colors.brand[600] },
-  dayTabLabel: { fontSize: 11, fontWeight: '700', color: colors.ink.faint },
-  dayTabLabelSelected: { color: '#ffffff' },
-  loading: { marginTop: 40 },
-  empty: { alignItems: 'center', gap: 8, marginTop: 60 },
-  list: { gap: 10 },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: '#ffffff',
-    borderRadius: 14,
-    padding: 14,
-  },
-  rowLive: { backgroundColor: colors.brand[50], borderWidth: 1, borderColor: colors.brand[200] },
-  time: { width: 68, fontSize: 12, fontWeight: '700', color: colors.ink.soft },
-  rowBody: { flex: 1, gap: 4 },
-  rowTitleLine: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-});

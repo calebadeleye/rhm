@@ -40,11 +40,32 @@ export function weekdayIndexForDate(year: number, month: number, day: number): n
   return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
 }
 
-/** Offset (minutes, tz - UTC) of `timeZone` at the given instant. */
+/** Offset (minutes, tz - UTC) of `timeZone` at the given instant.
+ *
+ * Uses `formatToParts` (not `toLocaleString` + re-parsing a locale string,
+ * which is implementation-defined and gave wrong results under Hermes on
+ * Android) so the wall-clock reading is diffed against the instant directly. */
 function getOffsetMinutes(instant: Date, timeZone: string): number {
-  const tzString = instant.toLocaleString('en-US', { timeZone });
-  const utcString = instant.toLocaleString('en-US', { timeZone: 'UTC' });
-  return (new Date(tzString).getTime() - new Date(utcString).getTime()) / 60_000;
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hour12: false,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).formatToParts(instant);
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? 0);
+  const asUtcMs = Date.UTC(
+    get('year'),
+    get('month') - 1,
+    get('day'),
+    get('hour') % 24,
+    get('minute'),
+    get('second'),
+  );
+  return (asUtcMs - instant.getTime()) / 60_000;
 }
 
 /** Builds the absolute Date instant for `minutesSinceMidnight` on a given

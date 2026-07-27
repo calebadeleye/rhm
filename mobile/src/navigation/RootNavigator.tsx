@@ -1,4 +1,4 @@
-import { NavigationContainer } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Home, CalendarDays, Headphones, HeartHandshake, User } from 'lucide-react-native';
@@ -8,7 +8,7 @@ import { ListenAgainScreen } from '../screens/ListenAgainScreen';
 import { PrayerRequestScreen } from '../screens/PrayerRequestScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { PlayerScreen } from '../screens/PlayerScreen';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import type { RootStackParamList, RootTabParamList } from './types';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
@@ -32,13 +32,14 @@ function ProfileIcon({ color, size }: IconProps) {
 }
 
 function MainTabs() {
+  const { colors } = useTheme();
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.brand[600],
         tabBarInactiveTintColor: colors.ink.faint,
-        tabBarStyle: { borderTopColor: colors.surface.muted },
+        tabBarStyle: { borderTopColor: colors.surface.muted, backgroundColor: colors.surface.default },
       }}
     >
       <Tab.Screen
@@ -64,15 +65,28 @@ function MainTabs() {
       <Tab.Screen
         name="ProfileTab"
         component={ProfileScreen}
-        options={{ title: 'Profile', tabBarIcon: ProfileIcon }}
+        options={{ title: 'About', tabBarIcon: ProfileIcon }}
       />
     </Tab.Navigator>
   );
 }
 
 export function RootNavigator() {
+  const { mode, colors } = useTheme();
+  const navigationTheme = {
+    ...(mode === 'dark' ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(mode === 'dark' ? DarkTheme.colors : DefaultTheme.colors),
+      background: colors.surface.warm,
+      card: colors.surface.default,
+      border: colors.surface.muted,
+      primary: colors.brand[600],
+      text: colors.ink.default,
+    },
+  };
+
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navigationTheme}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="MainTabs" component={MainTabs} />
         <Stack.Screen name="Player" component={PlayerScreen} options={{ presentation: 'modal' }} />

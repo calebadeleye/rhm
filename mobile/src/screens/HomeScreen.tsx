@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { Bell, Clock, Sun } from 'lucide-react-native';
+import { Bell, Clock, Moon, Sun } from 'lucide-react-native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { StatusPill } from '../components/StatusPill';
 import { PlayButton } from '../components/PlayButton';
@@ -15,8 +15,8 @@ import { useOpenPlayer } from '../hooks/useOpenPlayer';
 import { getCurrentAndNext, formatMinutes12 } from '../lib/liveSchedule';
 import { getPresenterForPlaylist } from '../data/presenterPhotos';
 import { env } from '../config/env';
-import { colors } from '../theme/colors';
-import { typography } from '../theme/typography';
+import { useTheme } from '../theme/ThemeContext';
+import { useTypography } from '../theme/typography';
 import type { RootTabParamList } from '../navigation/types';
 
 export function HomeScreen() {
@@ -26,6 +26,8 @@ export function HomeScreen() {
   const player = usePlayer();
   const openPlayer = useOpenPlayer();
   const tabNavigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
+  const { colors, mode, toggleTheme } = useTheme();
+  const typography = useTypography();
 
   const { current, next } = useMemo(() => {
     if (!scheduleQuery.data) return { current: null, next: null };
@@ -36,6 +38,66 @@ export function HomeScreen() {
   const recentEpisodes = episodesQuery.data?.slice(0, 2) ?? [];
   const currentPresenter = getPresenterForPlaylist(current?.daypart.shortName);
 
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        headerRow: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 20,
+        },
+        headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+        logo: { fontSize: 22, fontWeight: '900', color: colors.brand[700] },
+        greetingRow: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 20,
+        },
+        liveCard: {
+          height: 220,
+          borderRadius: 20,
+          overflow: 'hidden',
+          marginBottom: 20,
+          backgroundColor: colors.brand[800],
+        },
+        liveCardFallbackBg: { backgroundColor: colors.brand[700] },
+        liveCardOverlay: {
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(12, 37, 16, 0.55)',
+        },
+        liveCardContent: { flex: 1, padding: 18, justifyContent: 'flex-end', gap: 6 },
+        liveCardTitle: { fontSize: 24, fontWeight: '800', color: '#ffffff' },
+        liveCardSubtitle: { fontSize: 14, fontWeight: '600', color: '#e5f5e7' },
+        liveCardDescription: { fontSize: 12, color: '#dcefe0' },
+        liveCardPlayButton: { position: 'absolute', bottom: 16, right: 16 },
+        upNextCard: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 12,
+          backgroundColor: colors.surface.default,
+          borderRadius: 16,
+          padding: 14,
+          marginBottom: 24,
+        },
+        upNextText: { flex: 1, gap: 2 },
+        sectionHeaderRow: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 12,
+        },
+        seeAll: { color: colors.brand[600], fontWeight: '700', fontSize: 13 },
+        recentGrid: { flexDirection: 'row', gap: 14 },
+      }),
+    [colors],
+  );
+
   const handlePlay = async () => {
     if (!nowPlaying) return;
     await player.playLive(nowPlaying);
@@ -45,7 +107,10 @@ export function HomeScreen() {
   return (
     <ScreenContainer>
       <View style={styles.headerRow}>
-        <Text style={styles.logo}>RHM</Text>
+        <View style={styles.headerLeft}>
+          <Text style={styles.logo}>RHM</Text>
+          {nowPlaying?.isLive && <StatusPill status="live" />}
+        </View>
         <Bell color={colors.ink.soft} size={22} />
       </View>
 
@@ -54,7 +119,13 @@ export function HomeScreen() {
           <Text style={typography.h1}>Welcome back</Text>
           <Text style={typography.body}>Thank you for tuning in!</Text>
         </View>
-        <Sun color={colors.brand[500]} size={26} />
+        <Pressable onPress={toggleTheme} hitSlop={12} accessibilityRole="button" accessibilityLabel="Toggle theme">
+          {mode === 'dark' ? (
+            <Moon color={colors.brand[500]} size={26} />
+          ) : (
+            <Sun color={colors.brand[500]} size={26} />
+          )}
+        </Pressable>
       </View>
 
       <Pressable onPress={handlePlay} style={styles.liveCard}>
@@ -136,58 +207,3 @@ export function HomeScreen() {
     </ScreenContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  logo: { fontSize: 22, fontWeight: '900', color: colors.brand[700] },
-  greetingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  liveCard: {
-    height: 220,
-    borderRadius: 20,
-    overflow: 'hidden',
-    marginBottom: 20,
-    backgroundColor: colors.brand[800],
-  },
-  liveCardFallbackBg: { backgroundColor: colors.brand[700] },
-  liveCardOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(12, 37, 16, 0.55)',
-  },
-  liveCardContent: { flex: 1, padding: 18, justifyContent: 'flex-end', gap: 6 },
-  liveCardTitle: { fontSize: 24, fontWeight: '800', color: '#ffffff' },
-  liveCardSubtitle: { fontSize: 14, fontWeight: '600', color: '#e5f5e7' },
-  liveCardDescription: { fontSize: 12, color: '#dcefe0' },
-  liveCardPlayButton: { position: 'absolute', bottom: 16, right: 16 },
-  upNextCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 24,
-  },
-  upNextText: { flex: 1, gap: 2 },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  seeAll: { color: colors.brand[600], fontWeight: '700', fontSize: 13 },
-  recentGrid: { flexDirection: 'row', gap: 14 },
-});

@@ -7,8 +7,8 @@ import { useEpisodes } from '../hooks/useEpisodes';
 import { usePlayer } from '../hooks/usePlayer';
 import { useOpenPlayer } from '../hooks/useOpenPlayer';
 import { CATEGORY_FILTERS } from '../data/daypartCategories';
-import { colors } from '../theme/colors';
-import { typography } from '../theme/typography';
+import { useTheme } from '../theme/ThemeContext';
+import { useTypography } from '../theme/typography';
 import type { DaypartCategory } from '../types/schedule';
 
 export function ListenAgainScreen() {
@@ -17,6 +17,42 @@ export function ListenAgainScreen() {
   const openPlayer = useOpenPlayer();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<DaypartCategory | 'all'>('all');
+  const { colors } = useTheme();
+  const typography = useTypography();
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        container: { padding: 20 },
+        searchBar: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 8,
+          backgroundColor: colors.surface.default,
+          borderRadius: 12,
+          paddingHorizontal: 14,
+          paddingVertical: 10,
+          marginTop: 16,
+        },
+        searchInput: { flex: 1, fontSize: 14, color: colors.ink.default },
+        chipList: { flexGrow: 0 },
+        chipRow: { gap: 8, marginTop: 14, marginBottom: 16 },
+        chip: {
+          paddingHorizontal: 14,
+          paddingVertical: 8,
+          borderRadius: 999,
+          backgroundColor: colors.surface.muted,
+        },
+        chipSelected: { backgroundColor: colors.brand[600] },
+        chipLabel: { fontSize: 12, fontWeight: '700', color: colors.ink.soft },
+        chipLabelSelected: { color: '#ffffff' },
+        loading: { marginTop: 40 },
+        empty: { alignItems: 'center', marginTop: 60, paddingHorizontal: 20 },
+        gridRow: { gap: 14 },
+        gridContent: { gap: 14, paddingBottom: 40 },
+      }),
+    [colors],
+  );
 
   const filtered = useMemo(() => {
     const episodes = episodesQuery.data ?? [];
@@ -45,6 +81,7 @@ export function ListenAgainScreen() {
 
       <FlatList
         horizontal
+        style={styles.chipList}
         data={CATEGORY_FILTERS}
         keyExtractor={(item) => item.id}
         showsHorizontalScrollIndicator={false}
@@ -95,32 +132,3 @@ export function ListenAgainScreen() {
     </ScreenContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { padding: 20 },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginTop: 16,
-  },
-  searchInput: { flex: 1, fontSize: 14, color: colors.ink.default },
-  chipRow: { gap: 8, marginTop: 14, marginBottom: 16 },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: colors.surface.muted,
-  },
-  chipSelected: { backgroundColor: colors.brand[600] },
-  chipLabel: { fontSize: 12, fontWeight: '700', color: colors.ink.soft },
-  chipLabelSelected: { color: '#ffffff' },
-  loading: { marginTop: 40 },
-  empty: { alignItems: 'center', marginTop: 60, paddingHorizontal: 20 },
-  gridRow: { gap: 14 },
-  gridContent: { gap: 14, paddingBottom: 40 },
-});

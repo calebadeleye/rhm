@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { normaliseOnDemandItem, type RawOnDemandItem } from "./episodes.js";
+import {
+  normaliseOnDemandItem,
+  normalisePodcastEpisode,
+  type RawOnDemandItem,
+  type RawPodcast,
+  type RawPodcastEpisode,
+} from "./episodes.js";
 
 describe("normaliseOnDemandItem", () => {
   const baseItem: RawOnDemandItem = {
@@ -78,5 +84,82 @@ describe("normaliseOnDemandItem", () => {
       "https://radio.rhm.com.ng"
     );
     expect(result?.publishedAt).toBeNull();
+  });
+});
+
+describe("normalisePodcastEpisode", () => {
+  const podcast: RawPodcast = {
+    id: "pod-1",
+    title: "Sunday Sermons",
+    art: "https://radio.rhm.com.ng/api/station/1/podcast/pod-1/art",
+    is_published: true,
+  };
+
+  const episode: RawPodcastEpisode = {
+    id: "ep-1",
+    title: "Walking in Faith",
+    description: "<p>Full sermon notes</p>",
+    description_short: "Full sermon notes",
+    publish_at: 1_700_000_000,
+    is_published: true,
+    has_media: true,
+    art: null,
+    media: { length: 2400 },
+  };
+
+  it("normalises a valid podcast episode", () => {
+    const result = normalisePodcastEpisode(episode, podcast, "https://radio.rhm.com.ng", "1");
+    expect(result).not.toBeNull();
+    expect(result?.id).toBe("podcast-ep-1");
+    expect(result?.title).toBe("Walking in Faith");
+    expect(result?.description).toBe("Full sermon notes");
+    expect(result?.durationSeconds).toBe(2400);
+    expect(result?.publishedAt).toBe(new Date(1_700_000_000 * 1000).toISOString());
+  });
+
+  it("builds the media URL from the station/podcast/episode ids", () => {
+    const result = normalisePodcastEpisode(episode, podcast, "https://radio.rhm.com.ng", "1");
+    expect(result?.downloadUrl).toBe(
+      "https://radio.rhm.com.ng/api/station/1/podcast/pod-1/episode/ep-1/media"
+    );
+  });
+
+  it("falls back to the podcast's art when the episode has none", () => {
+    const result = normalisePodcastEpisode(episode, podcast, "https://radio.rhm.com.ng", "1");
+    expect(result?.artUrl).toBe(podcast.art);
+  });
+
+  it("prefers the episode's own art when present", () => {
+    const result = normalisePodcastEpisode(
+      { ...episode, art: "https://radio.rhm.com.ng/episode-art.jpg" },
+      podcast,
+      "https://radio.rhm.com.ng",
+      "1"
+    );
+    expect(result?.artUrl).toBe("https://radio.rhm.com.ng/episode-art.jpg");
+  });
+
+  it("excludes episodes with no media", () => {
+    expect(
+      normalisePodcastEpisode({ ...episode, has_media: false }, podcast, "https://radio.rhm.com.ng", "1")
+    ).toBeNull();
+  });
+
+  it("excludes unpublished episodes", () => {
+    expect(
+      normalisePodcastEpisode({ ...episode, is_published: false }, podcast, "https://radio.rhm.com.ng", "1")
+    ).toBeNull();
+  });
+
+  it("excludes episodes with no id", () => {
+    expect(
+      normalisePodcastEpisode({ ...episode, id: undefined }, podcast, "https://radio.rhm.com.ng", "1")
+    ).toBeNull();
+  });
+
+  it("returns null when the podcast has no id", () => {
+    expect(
+      normalisePodcastEpisode(episode, { ...podcast, id: undefined }, "https://radio.rhm.com.ng", "1")
+    ).toBeNull();
   });
 });

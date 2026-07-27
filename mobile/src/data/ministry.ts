@@ -24,5 +24,5 @@ export const ministryInfo: MinistryInfo = {
         'We exist to see lives changed — through the Gospel, through community, and through hope that outlasts circumstances.',
     },
   ],
-  address: 'PO Box 12345, Orlando, FL 32801',
+  address: 'Lagos, Nigeria',
 };

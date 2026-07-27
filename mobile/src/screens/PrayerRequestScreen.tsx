@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -10,18 +10,22 @@ import {
 } from 'react-native';
 import { CheckCircle2, HandHeart } from 'lucide-react-native';
 import { ScreenContainer } from '../components/ScreenContainer';
-import { prayerCategories, type PrayerCategoryId } from '../data/prayerCategories';
+import type { PrayerCategoryId } from '../data/prayerCategories';
 import { submitPrayerRequest } from '../api/prayerRequestService';
-import { colors } from '../theme/colors';
-import { typography } from '../theme/typography';
+import { useTheme } from '../theme/ThemeContext';
+import { useTypography } from '../theme/typography';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// The category picker was removed from this form; every submission is
+// tagged "other" server-side since the backend schema still requires it.
+const DEFAULT_CATEGORY: PrayerCategoryId = 'other';
 
 const initialForm = {
   name: '',
   email: '',
   phone: '',
-  category: 'healing' as PrayerCategoryId,
+  category: DEFAULT_CATEGORY,
   request: '',
   anonymous: false,
   consent: false,
@@ -34,6 +38,54 @@ export function PrayerRequestScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<SubmitStatus>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { colors } = useTheme();
+  const typography = useTypography();
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        header: { alignItems: 'center', gap: 8, marginBottom: 24 },
+        center: { textAlign: 'center' },
+        field: { marginBottom: 16, gap: 6 },
+        input: {
+          backgroundColor: colors.surface.default,
+          borderRadius: 12,
+          paddingHorizontal: 14,
+          paddingVertical: 12,
+          fontSize: 14,
+          color: colors.ink.default,
+        },
+        textarea: { minHeight: 120, textAlignVertical: 'top' },
+        toggleRow: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          backgroundColor: colors.surface.default,
+          borderRadius: 12,
+          padding: 14,
+          marginBottom: 16,
+          gap: 12,
+        },
+        toggleText: { flex: 1, gap: 2 },
+        consentRow: { flexDirection: 'row', gap: 10, marginBottom: 8 },
+        consentText: { flex: 1 },
+        errorText: { fontSize: 12, fontWeight: '600', color: colors.danger, marginTop: 2 },
+        successCard: { alignItems: 'center', gap: 12, paddingVertical: 60, paddingHorizontal: 20 },
+        submitButton: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+          backgroundColor: colors.brand[600],
+          borderRadius: 14,
+          paddingVertical: 16,
+          marginTop: 8,
+        },
+        submitButtonDisabled: { opacity: 0.6 },
+        submitButtonLabel: { color: '#ffffff', fontWeight: '700', fontSize: 15 },
+      }),
+    [colors],
+  );
 
   const validate = (): boolean => {
     const next: Record<string, string> = {};
@@ -97,7 +149,7 @@ export function PrayerRequestScreen() {
 
       {!form.anonymous && (
         <>
-          <Field label="Your Name" error={errors.name}>
+          <Field label="Your Name" error={errors.name} styles={styles} typography={typography}>
             <TextInput
               value={form.name}
               onChangeText={(name) => setForm((f) => ({ ...f, name }))}
@@ -106,7 +158,7 @@ export function PrayerRequestScreen() {
               style={styles.input}
             />
           </Field>
-          <Field label="Your Email (optional)" error={errors.email}>
+          <Field label="Your Email (optional)" error={errors.email} styles={styles} typography={typography}>
             <TextInput
               value={form.email}
               onChangeText={(email) => setForm((f) => ({ ...f, email }))}
@@ -120,24 +172,7 @@ export function PrayerRequestScreen() {
         </>
       )}
 
-      <Field label="Prayer category">
-        <View style={styles.chipRow}>
-          {prayerCategories.map((cat) => {
-            const isSelected = cat.id === form.category;
-            return (
-              <Pressable
-                key={cat.id}
-                onPress={() => setForm((f) => ({ ...f, category: cat.id }))}
-                style={[styles.chip, isSelected && styles.chipSelected]}
-              >
-                <Text style={[styles.chipLabel, isSelected && styles.chipLabelSelected]}>{cat.label}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </Field>
-
-      <Field label="Your Prayer Request" error={errors.request}>
+      <Field label="Your Prayer Request" error={errors.request} styles={styles} typography={typography}>
         <TextInput
           value={form.request}
           onChangeText={(request) => setForm((f) => ({ ...f, request }))}
@@ -194,7 +229,19 @@ export function PrayerRequestScreen() {
   );
 }
 
-function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
+function Field({
+  label,
+  error,
+  children,
+  styles,
+  typography,
+}: {
+  label: string;
+  error?: string;
+  children: ReactNode;
+  styles: ReturnType<typeof StyleSheet.create>;
+  typography: ReturnType<typeof useTypography>;
+}) {
   return (
     <View style={styles.field}>
       <Text style={typography.bodyBold}>{label}</Text>
@@ -203,55 +250,3 @@ function Field({ label, error, children }: { label: string; error?: string; chil
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  header: { alignItems: 'center', gap: 8, marginBottom: 24 },
-  center: { textAlign: 'center' },
-  field: { marginBottom: 16, gap: 6 },
-  input: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 14,
-    color: colors.ink.default,
-  },
-  textarea: { minHeight: 120, textAlignVertical: 'top' },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 999,
-    backgroundColor: colors.surface.muted,
-  },
-  chipSelected: { backgroundColor: colors.brand[600] },
-  chipLabel: { fontSize: 12, fontWeight: '700', color: colors.ink.soft },
-  chipLabelSelected: { color: '#ffffff' },
-  toggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 16,
-    gap: 12,
-  },
-  toggleText: { flex: 1, gap: 2 },
-  consentRow: { flexDirection: 'row', gap: 10, marginBottom: 8 },
-  consentText: { flex: 1 },
-  errorText: { fontSize: 12, fontWeight: '600', color: colors.danger, marginTop: 2 },
-  successCard: { alignItems: 'center', gap: 12, paddingVertical: 60, paddingHorizontal: 20 },
-  submitButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: colors.brand[600],
-    borderRadius: 14,
-    paddingVertical: 16,
-    marginTop: 8,
-  },
-  submitButtonDisabled: { opacity: 0.6 },
-  submitButtonLabel: { color: '#ffffff', fontWeight: '700', fontSize: 15 },
-});

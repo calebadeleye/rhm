@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, View, type ScrollViewProps } from 'react-native';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 
 interface ScreenContainerProps extends ScrollViewProps {
   children: ReactNode;
@@ -8,6 +8,22 @@ interface ScreenContainerProps extends ScrollViewProps {
 }
 
 export function ScreenContainer({ children, scroll = true, style, ...rest }: ScreenContainerProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        container: {
+          flex: 1,
+          backgroundColor: colors.surface.warm,
+        },
+        content: {
+          padding: 20,
+          paddingBottom: 40,
+        },
+      }),
+    [colors],
+  );
+
   if (!scroll) {
     return <View style={[styles.container, style as object]}>{children}</View>;
   }
@@ -22,14 +38,3 @@ export function ScreenContainer({ children, scroll = true, style, ...rest }: Scr
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.surface.warm,
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-});
